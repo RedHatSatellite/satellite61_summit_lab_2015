@@ -1,0 +1,11 @@
+<network>
+  <name>Satellite61Private</name>
+  <uuid>bc9bc097-5c04-ec2a-ec36-7f043a3749fa</uuid>
+  <forward dev='br0' mode='nat'>
+    <interface dev='br0'/>
+  </forward>
+  <bridge name='vmnetsp' stp='on' delay='0' />
+  <mac address='52:54:00:A7:02:89'/>
+  <ip address='192.168.150.254' netmask='255.255.255.0'> </ip>
+</network>
+
