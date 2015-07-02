@@ -7,7 +7,7 @@ summit lab that was presented at Red Hat Summit, 2015.
 
 * Physcial Machine, with KVM enabled
 * Sufficent disk space (about 30GB) for virtual machines
-* RHEL 7.1 or Fedora (Mostly tested with RHEL 7.1 / Fedora 22)
+* Clean RHEL 7.1 or Fedora (Mostly tested with RHEL 7.1 / Fedora 22)
 * Libvirt
 * Open libvirt TCP connection (to avoid certificates), details bellow
 * Subcriptions which allow you access to the Satellite 6.1 Beta Bits
@@ -71,6 +71,8 @@ virsh net-autostart Satellite61Private
 
 
 ### Setup Satellite 6.1 VM
+From your Host:
+
 ```sh
 virsh define /root/satellite61_summit_lab_2015/libvirt/satellite61.summit-lab.redhat.com
 qemu-img create -f qcow2 -o preallocation=metadata /var/lib/libvirt/images/Satellite61-Summit2015.img 50G
@@ -78,21 +80,44 @@ virsh start Satellite61-Summit2015
 virsh autostart Satellite61-Summit2015
 ```
 
-### Build the satellite VM your self
+At this point, you will need to define how best to set up the machine. 
+For the purpose of this example, a RHEL7 ISO Was used with the following 
+network data defined in Anaconda:
 
-Use virt-manager to create a machine called Satellite61-Summit2015
-with access to the Satellite bits. The requirements are:
+* IPv4 Manual
+** Hostname: satellite61.summit-lab.redhat.com
+** IP Address: 192.168.150.10
+** NetMask: 255.255.255.0
+** Gateway: 192.168.150.254 
+** DNS: 192.168.150.254
 
-* Create a RHEL 7.1 base VM
-* Subscribed to the Satellite 6.1 beta bits
-* yum install katello
-* git clone (same as above)
-* copy your manifest (named manifest.zip) into the satellite61_summit_lab_2015 directory 
+Notes for the above:
+* The hostname and ip must be the same as shown.
+* the 254 address is the address of the host as seen from the guest. 
+
+From inside the guest:
 
 ```sh
+yum install katello
+yum update
 hostnamectl set-hostname satellite61.summit-lab.redhat.com 
+systemctl stop firewalld
+git clone https://github.com/Katello/satellite61_summit_lab_2015.git
 cd /root/satellite61_summit_lab_2015
-git pull # to ensure you have latest version
+cp $YOUR_MANIFEST /root/satellite61_summit_lab_2015/manifest.zip
+```
+
+Make sure that the fqdn (output of **hostname -f**) of the physical system resolves to 192.168.150.254 on
+the satellite vm
+
+```sh
+echo 192.168.150.254 "my real desktop hostname -f output" >> /etc/hosts
+```
+
+This is a good time to freeze the image, or create a qemu layer as a backup just in case.
+
+```
+cd /root/satellite61_summit_lab_2015
 ./install_command.sh
 ./summit.sh -c summit.config
 ```
@@ -112,13 +137,6 @@ Add to /etc/hosts on the desktop an entry for satellite61 vm
 echo 192.168.150.10 satellite61.summit-lab.redhat.com >> /etc/hosts
 ```
 
-#### Satellite VM
-Make sure that the fqdn (output of **hostname -f**) of the physical system resolves to 192.168.150.254 on
-the satellite vm
-
-```sh
-echo 192.168.150.254 "my real desktop hostname -f output" >> /etc/hosts
-```
 ### Certificates
 
 Satellite 6.1 comes with its own CA, in order for certain functions (e.g.
